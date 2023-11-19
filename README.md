@@ -1330,5 +1330,325 @@ service nginx restart
 ```
 
 ## Soal 13
-> 
+> Semua data yang diperlukan, diatur pada Denken dan harus dapat diakses oleh Frieren, Flamme, dan Fern. (13)
+### Solution
+Konfigurasi pada Node Denken:
+```sh
+# Script untuk Node Denken
+apt-get update
+apt-get install mariadb-server -y
+service mysql restart
 
+mysql <<EOF
+CREATE USER 'kelompokd17'@'%' IDENTIFIED BY 'passwordd17';
+CREATE USER 'kelompokd17'@'localhost' IDENTIFIED BY 'passwordd17';
+CREATE DATABASE dbkelompokd17;
+GRANT ALL PRIVILEGES ON *.* TO 'kelompokd17'@'%';
+GRANT ALL PRIVILEGES ON *.* TO 'kelompokd17'@'localhost';
+FLUSH PRIVILEGES;
+EOF
+
+echo '
+[client-server]
+
+!includedir /etc/mysql/conf.d/
+!includedir /etc/mysql/mariadb.conf.d/
+
+[mysqld]
+skip-networking=0
+skip-bind-address
+' > /etc/mysql/my.cnf
+
+echo '
+[server]
+
+[mysqld]
+
+user                    = mysql
+pid-file                = /run/mysqld/mysqld.pid
+socket                  = /run/mysqld/mysqld.sock
+#port                   = 3306
+basedir                 = /usr
+datadir                 = /var/lib/mysql
+tmpdir                  = /tmp
+lc-messages-dir         = /usr/share/mysql
+#skip-external-locking
+
+# Instead of skip-networking the default is now to listen only on
+# localhost which is more compatible and is not less secure.
+bind-address            = 0.0.0.0
+
+query_cache_size        = 16M
+
+query_cache_size        = 16M
+
+log_error = /var/log/mysql/error.log
+
+expire_logs_days        = 10
+
+character-set-server  = utf8mb4
+collation-server      = utf8mb4_general_ci
+
+[embedded]
+
+[mariadb]
+
+[mariadb-10.3]
+' > /etc/mysql/mariadb.conf.d/50-server.cnf
+
+service mysql restart
+
+```
+Konfigurasi pada Node Eisen (Load Balancer)
+```sh
+# Script untuk Node Eisen (Load Balancer)
+apt-get update
+apt-get install nginx -y
+apt-get install htop -y
+service nginx start
+
+touch /etc/nginx/sites-available/lb-granz
+mkdir /etc/nginx/rahasiakita
+
+echo '
+netics:$apr1$sWc7lqUh$WZtJIOErQKS/ydaCV46ft1
+' > /etc/nginx/rahasiakita/.htpasswd
+
+# Konfigurasi pembatasan akses ke Load Balancer
+echo '
+location / {
+    allow 10.30.3.69;
+    allow 10.30.3.70;
+    allow 10.30.4.167;
+    allow 10.30.4.168;
+    deny all;
+
+    include /etc/nginx/sites-available/lb-granz;
+}
+' >> /etc/nginx/sites-available/lb-granz
+
+# Konfigurasi Proxy Pass untuk /its
+echo '
+location /its {
+    allow 10.30.3.69;
+    allow 10.30.3.70;
+    allow 10.30.4.167;
+    allow 10.30.4.168;
+    deny all;
+
+    proxy_pass https://www.its.ac.id;
+
+    auth_basic "Administrator\'s Area";
+    auth_basic_user_file /etc/nginx/rahasiakita/.htpasswd;
+}
+' >> /etc/nginx/sites-available/lb-granz
+
+service nginx restart
+
+```
+Konfigurasi pada Node Frieren, Flamme, dan Fern (PHP Workers)
+```sh
+# Script untuk Node Frieren, Flamme, dan Fern
+apt-get update
+
+apt-get install -y lsb-release ca-certificates apt-transport-https software-properties-common gnupg2
+
+curl -sSLo /usr/share/keyrings/deb.sury.org-php.gpg https://packages.sury.org/php/apt.gpg
+
+sh -c 'echo "deb [signed-by=/usr/share/keyrings/deb.sury.org-php.gpg] https://packages.sury.org/php/ $(lsb_release -sc) main" > /etc/apt/sources.list.d/php.list'
+
+apt-get update
+
+apt-get install php8.0-mbstring php8.0-xml php8.0-cli php8.0-common php8.0-intl php8.0-opcache php8.0-readline php8.0-mysql php8.0-fpm php8.0-curl unzip wget -y
+
+# ... (Script lainnya)
+
+# Konfigurasi PHP pada Laravel
+echo '
+server {
+
+    listen 8003;
+
+    root /var/www/laravel-praktikum-jarkom/public;
+
+    index index.php index.html index.htm;
+    server_name riegel.canyon.d17.com;
+
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    # pass PHP scripts to FastCGI server
+    location ~ \.php$ {
+        include snippets/fastcgi-php.conf;
+        fastcgi_pass unix:/var/run/php/php8.0-fpm.sock;
+    }
+
+    location ~ /\.ht {
+        deny all;
+    }
+
+    error_log /var/log/nginx/implementasi_error.log;
+    access_log /var/log/nginx/implementasi_access.log;
+}
+' > /etc/nginx/sites-available/riegel.canyon.d17
+
+# ... (Script lainnya)
+
+service php8.0-fpm start
+service nginx start
+
+```
+
+Keterangan Tambahan:
+- Node Denken berperan sebagai database server menggunakan MariaDB.
+- Node Eisen (Load Balancer) mengatur pembatasan akses ke Load Balancer dan melakukan proxy pass untuk /its.
+- Node Frieren, Flamme, dan Fern berperan sebagai PHP Workers yang menjalankan aplikasi Laravel dan diakses melalui Load Balancer.
+
+### Result
+
+## Soal 14
+> Frieren, Flamme, dan Fern memiliki Granz Channel sesuai dengan quest guide berikut. Jangan lupa melakukan instalasi PHP8.0 dan Composer 
+
+### Solution
+Node Frieren, Flamme, dan Fern (PHP Workers)
+
+1. Instalasi PHP 8.0 dan Composer
+```sh
+apt-get update
+apt-get install -y lsb-release ca-certificates apt-transport-https software-properties-common gnupg2
+
+curl -sSLo /usr/share/keyrings/deb.sury.org-php.gpg https://packages.sury.org/php/apt.gpg
+
+sh -c 'echo "deb [signed-by=/usr/share/keyrings/deb.sury.org-php.gpg] https://packages.sury.org/php/ $(lsb_release -sc) main" > /etc/apt/sources.list.d/php.list'
+
+apt-get update
+
+apt-get install php8.0-mbstring php8.0-xml php8.0-cli php8.0-common php8.0-intl php8.0-opcache php8.0-readline php8.0-mysql php8.0-fpm php8.0-curl unzip wget -y
+
+apt-get install nginx -y
+
+wget https://getcomposer.org/download/2.0.13/composer.phar
+
+chmod +x composer.phar
+
+mv composer.phar /usr/bin/composer
+
+```
+2. Konfigurasi PHP pada Laravel
+```sh
+# Script ini sebagian dari langkah-langkah konfigurasi pada Laravel
+echo '
+server {
+    listen 8003;
+
+    root /var/www/laravel-praktikum-jarkom/public;
+
+    index index.php index.html index.htm;
+    server_name riegel.canyon.d17.com;
+
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    # pass PHP scripts to FastCGI server
+    location ~ \.php$ {
+        include snippets/fastcgi-php.conf;
+        fastcgi_pass unix:/var/run/php/php8.0-fpm.sock;
+    }
+
+    location ~ /\.ht {
+        deny all;
+    }
+
+    error_log /var/log/nginx/implementasi_error.log;
+    access_log /var/log/nginx/implementasi_access.log;
+}
+' > /etc/nginx/sites-available/riegel.canyon.d17
+
+ln -s /etc/nginx/sites-available/riegel.canyon.d17 /etc/nginx/sites-enabled/
+
+chown -R www-data.www-data /var/www/laravel-praktikum-jarkom/storage
+
+service php8.0-fpm start
+service nginx start
+
+```
+
+3. Penyesuaian Konfigurasi PHP-FPM
+```sh
+# Menambahkan konfigurasi PHP-FPM pada www.conf
+echo '
+[www]
+user = www-data
+group = www-data
+listen = /run/php/php8.0-fpm.sock
+listen.owner = www-data
+listen.group = www-data
+php_admin_value[disable_functions] = exec,passthru,shell_exec,system
+php_admin_flag[allow_url_fopen] = off
+
+; Choose how the process manager will control the number of child processes.
+
+pm = dynamic
+pm.max_children = 25
+pm.start_servers = 12
+pm.min_spare_servers = 8
+pm.max_spare_servers = 15
+' > /etc/php/8.0/fpm/pool.d/www.conf
+
+service php8.0-fpm restart
+```
+
+Selnjutnya konfigurasi nginx pada Load Balancer (Eisen)
+```sh
+# Script ini menunjukkan konfigurasi Nginx untuk Load Balancing pada Laravel
+echo '
+upstream backend-laravel  {
+    server 10.30.4.1:8001; # IP Fern
+    server 10.30.4.2:8002; # IP Flamme
+    server 10.30.4.3:8003; # IP Frieren
+}
+
+server {
+    listen 81;
+    server_name riegel.canyon.d17.com;
+
+    location /Fern/ {
+        proxy_bind 10.30.2.2;
+        proxy_pass http://10.30.4.1:8001;
+    }
+
+    location /Flamme/ {
+        proxy_bind 10.30.2.2;
+        proxy_pass http://10.30.4.2:8002;
+    }
+
+    location /Frieren/ {
+        proxy_bind 10.30.2.2;
+        proxy_pass http://10.30.4.3:8002;
+    }
+
+    location / {
+        proxy_pass http://backend-laravel;
+        proxy_set_header    X-Real-IP $remote_addr;
+        proxy_set_header    X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header    Host $http_host;
+    }
+
+    error_log /var/log/nginx/lb_error.log;
+    access_log /var/log/nginx/lb_access.log;
+}
+' > /etc/nginx/sites-available/lb-riegel
+
+ln -s /etc/nginx/sites-available/lb-riegel /etc/nginx/sites-enabled/
+
+service nginx restart
+
+```
+Keterangan Tambahan:
+- Instalasi PHP 8.0 dan Composer telah berhasil dilakukan pada Node Frieren, Flamme, dan Fern.
+- Konfigurasi PHP pada aplikasi Laravel telah disesuaikan dengan versi PHP yang diinstal.
+- Nginx telah dikonfigurasi untuk melakukan Load Balancing pada aplikasi Laravel yang dijalankan oleh Node Frieren, Flamme, dan Fern.
+
+### Results
