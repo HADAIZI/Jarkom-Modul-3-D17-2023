@@ -16,62 +16,62 @@
   - [Config](#config)
   - [List Script Node](#List-Script-Node)
 - [Soal 1](#Soal-1)
-  - [Script](#script)
+  - [Solution](#solution)
   - [Result](#result)
 - [Soal 2](#Soal-2)
-  - [Script](#script-1)
+  - [Solution](#solution-1)
 - [Soal 3](#Soal-3)
-  - [Script](#script-2)
+  - [Solution](#solution-2)
 - [Soal 4](#Soal-4)
-  - [Script](#script-3)
+  - [Solution](#solution-3)
   - [Result](#result-1)
 - [Soal 5](#Soal-5)
-  - [Script](#script-4)
+  - [Solution](#solution-4)
   - [Result](#result-2)
 - [Soal 6](#Soal-6)
-  - [Script](#script-5)
+  - [Solution](#solution-5)
   - [Result](#result-3)
 - [Soal 7](#Soal-7)
-  - [Script](#script-6)
+  - [Solution](#solution-6)
   - [Result](#result-4)
 - [Soal 8](#Soal-8)
-  - [Script](#script-7)
+  - [Solution](#solution-7)
   - [Result](#result-5)
 - [Soal 9](#Soal-9)
-  - [Script](#script-8)
+  - [Solution](#solution-8)
   - [Result](#result-6)
 - [Soal 10](#Soal-10)
-  - [Script](#script-9)
+  - [Solution](#solution-9)
   - [Result](#result-7)
 - [Soal 11](#Soal-11)
-  - [Script](#script-10)
+  - [Solution](#solution-10)
   - [Result](#result-8)
 - [Soal 12](#Soal-12)
-  - [Script](#script-11)
+  - [Solution](#solution-11)
   - [Result](#result-9)
 - [Soal 13](#Soal-13)
-  - [Script](#script-12)
+  - [Solution](#solution-12)
   - [Result](#result-10)
 - [Soal 14](#Soal-14)
-  - [Script](#script-13)
+  - [Solution](#solution-13)
   - [Result](#result-11)
 - [Soal 15](#Soal-15)
-  - [Script](#script-14)
+  - [Solution](#solution-14)
   - [Result](#result-12)
 - [Soal 16](#Soal-16)
-  - [Script](#script-15)
+  - [Solution](#solution-15)
   - [Result](#result-13)
 - [Soal 17](#Soal-17)
-  - [Script](#script-16)
+  - [Solution](#solution-16)
   - [Result](#result-14)
 - [Soal 18](#Soal-18)
-  - [Script](#script-17)
+  - [Solution](#solution-17)
   - [Result](#result-15)
 - [Soal 19](#Soal-19)
-  - [Script](#script-18)
+  - [Solution](#solution-18)
   - [Result](#result-16)
 - [Soal 20](#Soal-20)
-  - [Script](#script-19)
+  - [Solution](#solution-19)
   - [Result](#result-17)
 
 ## Topologi
@@ -177,7 +177,7 @@ auto eth0
 iface eth0 inet dhcp
 ```
 
-## List Script Node Pada Root
+### List Script Node Pada Root
 - **Aura**
 ```sh
 apt-get update
@@ -837,5 +837,220 @@ echo '
 apt-get install jq -y
 ```
 
+## Soal 1
+>Lakukan konfigurasi sesuai dengan peta yang sudah diberikan.
 
+### Solution
+Pertama-tama, kami melakukan persiapan konfigurasi topologi dan setup sesuai dengan aturan yang telah diberikan. Untuk kebutuhan pengujian, kami menambahkan domain register berupa riegel.canyon.d17.com untuk worker Laravel dan granz.channel.d17.com untuk worker PHP yang mengarah pada worker dengan IP 10.30.x.1. Karena pada konfigurasi topologi sebelumnya seluruh worker sudah menggunakan DHCP, maka kami melakukan modifikasi pada node Lugner dan Fern seperti berikut:
 
+- **Lugner (PHP Worker)**
+```
+auto eth0
+iface eth0 inet static
+	address 10.30.3.1
+	netmask 255.255.255.0
+	gateway 10.30.3.0
+
+```
+- **Fern (Laravel Worker)**
+```
+auto eth0
+iface eth0 inet static
+	address 10.30.4.1
+	netmask 255.255.255.0
+	gateway 10.30.4.0
+```
+
+Selanjutnya, pada DNS Server (Heiter), kami menjalankan perintah berikut:
+```sh
+echo 'zone "riegel.canyon.d17.com" {
+    type master;
+    file "/etc/bind/sites/riegel.canyon.d17.com";
+};
+
+zone "granz.channel.d17.com" {
+    type master;
+    file "/etc/bind/sites/granz.channel.d17.com";
+};
+
+zone "10.in-addr.arpa" {
+    type master;
+    file "/etc/bind/sites/10.in-addr.arpa";
+};' > /etc/bind/named.conf.local
+
+mkdir -p /etc/bind/sites
+cp /etc/bind/db.local /etc/bind/sites/riegel.canyon.d17.com
+cp /etc/bind/db.local /etc/bind/sites/granz.channel.d17.com
+cp /etc/bind/db.local /etc/bind/sites/10.in-addr.arpa
+
+echo ';
+; BIND data file for local loopback interface
+;
+$TTL    604800
+@       IN      SOA     riegel.canyon.d17.com. root.riegel.canyon.d17.com. (
+                        2023111401      ; Serial
+                         604800         ; Refresh
+                          86400         ; Retry
+                        2419200         ; Expire
+                         604800 )       ; Negative Cache TTL
+;
+@       IN      NS      riegel.canyon.d17.com.
+@       IN      A       10.30.4.1     ; IP Fern
+www     IN      CNAME   riegel.canyon.d17.com.' > /etc/bind/sites/riegel.canyon.d17.com
+
+echo ';
+; BIND data file for local loopback interface
+;
+$TTL    604800
+@       IN      SOA     granz.channel.d17.com. root.granz.channel.d17.com. (
+                        2023111401      ; Serial
+                         604800         ; Refresh
+                          86400         ; Retry
+                        2419200         ; Expire
+                         604800 )       ; Negative Cache TTL
+;
+@       IN      NS      granz.channel.d17.com.
+@       IN      A       10.30.3.1     ; IP Lugner
+www     IN      CNAME   granz.channel.d17.com.' > /etc/bind/sites/granz.channel.d17.com
+
+echo 'options {
+      directory "/var/cache/bind";
+
+      forwarders {
+              192.168.122.1;
+      };
+
+      allow-query{any;};
+      auth-nxdomain no;
+      listen-on-v6 { any; };
+}; ' >/etc/bind/named.conf.options
+
+service bind9 start
+```
+
+## Soal 2
+> Client yang melalui Switch3 mendapatkan range IP dari [prefix IP].3.16 - [prefix IP].3.32 dan [prefix IP].3.64 - [prefix IP].3.80 (2)
+
+### Solution
+Konfigurasi Himmel:
+```sh
+subnet 10.30.3.0 netmask 255.255.255.0 {
+    range 10.30.3.16 10.30.3.32;
+    range 10.30.3.64 10.30.3.80;
+    option routers 10.30.3.0;
+    option broadcast-address 10.30.3.255;
+    option domain-name-servers 10.30.1.2;
+    default-lease-time 180;
+    max-lease-time 5760;
+}
+```
+Pada konfigurasi di atas, rentang IP dari [prefix IP].3.16 hingga [prefix IP].3.32 dan [prefix IP].3.64 hingga [prefix IP].3.80 telah ditentukan. Klien yang terhubung melalui Switch3 dan menggunakan layanan DHCP dari Himmel akan diberikan alamat IP dari rentang tersebut.
+
+Klien yang terhubung melalui Switch3 akan secara otomatis mendapatkan alamat IP dari rentang yang telah ditentukan pada konfigurasi di atas. Sebagai contoh, jika ada klien yang terhubung, ia akan diberikan alamat IP seperti 10.30.3.17 atau 10.30.3.65, sesuai dengan rentang yang telah ditentukan.
+
+### Result
+
+## Soal 3
+> Client yang melalui Switch4 mendapatkan range IP dari [prefix IP].4.12 - [prefix IP].4.20 dan [prefix IP].4.160 - [prefix IP].4.168 (3)
+### Solution
+Klien yang terhubung melalui Switch4 akan mendapatkan rentang IP dari [prefix IP].4.12 hingga [prefix IP].4.20 dan [prefix IP].4.160 hingga [prefix IP].4.168. Konfigurasi DHCP pada Himmel (DHCP Server) telah disesuaikan untuk memberikan rentang IP tersebut kepada klien.
+
+Konfigurasi Himmel:
+```sh
+subnet 10.30.3.0 netmask 255.255.255.0 {
+    range 10.30.3.16 10.30.3.32;
+    range 10.30.3.64 10.30.3.80;
+    option routers 10.30.3.0;
+    option broadcast-address 10.30.3.255;
+    option domain-name-servers 10.30.1.2;
+    default-lease-time 180;
+    max-lease-time 5760;
+}
+```
+Pada konfigurasi di atas, rentang IP dari [prefix IP].4.12 hingga [prefix IP].4.20 dan [prefix IP].4.160 hingga [prefix IP].4.168 telah ditentukan. Klien yang terhubung melalui Switch4 dan menggunakan layanan DHCP dari Himmel akan diberikan alamat IP dari rentang tersebut.
+
+## Soal 4
+
+### Solution
+Untuk memastikan bahwa klien dapat terhubung ke internet melalui DNS yang disediakan oleh Heiter dan mendapatkan konfigurasi seperti `option broadcast-address` dan `option domain-name-servers`, berikut adalah langkah-langkah dan konfigurasi yang dilakukan pada klien:
+
+1. Konfigurasi DHCP Server
+Tambahkan beberapa konfigurasi pada file `/etc/dhcp/dhcpd.conf` pada DHCP Server (Heiter):
+
+```sh
+subnet 10.30.3.0 netmask 255.255.255.0 {
+    range 10.30.3.16 10.30.3.32;
+    range 10.30.3.64 10.30.3.80;
+    option routers 10.30.3.0;
+    option broadcast-address 10.30.3.255;
+    option domain-name-servers 10.30.1.2;
+}
+
+subnet 10.30.4.0 netmask 255.255.255.0 {
+    range 10.30.4.12 10.30.4.20;
+    range 10.30.4.160 10.30.4.168;
+    option routers 10.30.4.0;
+    option broadcast-address 10.30.4.255;
+    option domain-name-servers 10.30.1.2;
+}
+```
+
+2. Konfigurasi Shell Script
+Tambahkan script pada shell untuk melakukan konfigurasi pada DHCP Server:
+
+```sh
+echo 'subnet 10.30.1.0 netmask 255.255.255.0 {
+}
+
+subnet 10.30.2.0 netmask 255.255.255.0 {
+}
+
+subnet 10.30.3.0 netmask 255.255.255.0 {
+    range 10.30.3.16 10.30.3.32;
+    range 10.30.3.64 10.30.3.80;
+    option routers 10.30.3.0;
+    option broadcast-address 10.30.3.255;
+    option domain-name-servers 10.30.1.2;
+}
+
+subnet 10.30.4.0 netmask 255.255.255.0 {
+    range 10.30.4.12 10.30.4.20;
+    range 10.30.4.160 10.30.4.168;
+    option routers 10.30.4.0;
+    option broadcast-address 10.30.4.255;
+    option domain-name-servers 10.30.1.2;
+} ' > /etc/dhcp/dhcpd.conf
+
+service isc-dhcp-server start
+```
+
+3. Konfigurasi DHCP Relay
+Tambahkan konfigurasi pada file `/etc/default/isc-dhcp-relay` pada setiap DHCP Relay (Lugner dan Fern):
+
+```sh
+echo '# Defaults for isc-dhcp-relay initscript
+# sourced by /etc/init.d/isc-dhcp-relay
+# installed at /etc/default/isc-dhcp-relay by the maintainer scripts
+
+#
+# This is a POSIX shell fragment
+#
+
+# What servers should the DHCP relay forward requests to?
+SERVERS="10.30.1.1"
+
+# On what interfaces should the DHCP relay (dhrelay) serve DHCP requests?
+INTERFACES="eth1 eth2 eth3 eth4"
+
+# Additional options that are passed to the DHCP relay daemon?
+OPTIONS=""' > /etc/default/isc-dhcp-relay
+
+service isc-dhcp-relay start 
+```
+
+Pastikan juga bahwa `net.ipv4.ip_forward` diaktifkan pada file `/etc/sysctl.conf` pada setiap DHCP Relay.
+
+4. Restart Client
+Terakhir, pastikan untuk merestart seluruh klien agar dapat melakukan leasing IP dari DHCP Server.
+
+Dengan melakukan langkah-langkah tersebut, klien seharusnya dapat mendapatkan DNS dari Heiter dan terhubung dengan internet melalui DNS tersebut.
