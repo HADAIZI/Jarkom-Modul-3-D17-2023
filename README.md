@@ -1184,4 +1184,89 @@ ab -n 1000 -c 100 http://www.granz.channel.d17.com/
     Grafik request per second untuk masing masing algoritma. 
     Analisis (8)
 
+**Algoritma Round Robin**
 
+1. Lakukan konfigurasi load balancer (Eisen) di directory ``/etc/nginx/sites-available/lb-granz``, dengan cara memodifikasi upstream agar memiliki algoritma round robin. Berikut adalah potongan kode yang perlu ditambahkan
+
+```sh
+# Default menggunakan Round Robin
+upstream backend  {
+    server 10.30.3.1; # IP Lugner
+    server 10.30.3.2; # IP Linie
+    server 10.30.3.3; # IP Lawine
+}
+```
+
+2. Lalu, pada client lakukan testing dengan apache benchmark ke ``IP Load Balancer`` dengan cara berikut,
+
+```sh
+ab -n 200 -c 10 http://10.30.2.2/
+```
+
+3. Berikut adalah screenshot hasil benchmark-nya,
+
+**Algoritma IP Hash**
+
+1. Lakukan konfigurasi load balancer (Eisen) di directory ``/etc/nginx/sites-available/lb-granz``, dengan cara memodifikasi upstream agar memiliki algoritma round robin. Berikut adalah potongan kode yang perlu ditambahkan
+
+```sh
+ip_hash;
+upstream backend  {
+    server 10.30.3.1; # IP Lugner
+    server 10.30.3.2; # IP Linie
+    server 10.30.3.3; # IP Lawine
+}
+```
+
+2. Lalu, pada client lakukan testing dengan apache benchmark ke ``IP Load Balancer`` dengan cara berikut,
+
+```sh
+ab -n 200 -c 10 http://10.30.2.2/
+```
+
+3. Berikut adalah screenshot hasil benchmark-nya,
+
+**Algoritma Least Connection**
+
+1. Lakukan konfigurasi load balancer (Eisen) di directory ``/etc/nginx/sites-available/lb-granz``, dengan cara memodifikasi upstream agar memiliki algoritma round robin. Berikut adalah potongan kode yang perlu ditambahkan
+
+```sh
+least_conn;
+upstream backend  {
+    server 10.30.3.1; # IP Lugner
+    server 10.30.3.2; # IP Linie
+    server 10.30.3.3; # IP Lawine
+}
+```
+
+2. Lalu, pada client lakukan testing dengan apache benchmark ke ``IP Load Balancer`` dengan cara berikut,
+
+```sh
+ab -n 200 -c 10 http://10.30.2.2/
+```
+
+3. Berikut adalah screenshot hasil benchmark-nya,
+
+**Algoritma Generic Hash**
+
+1. Lakukan konfigurasi load balancer (Eisen) di directory ``/etc/nginx/sites-available/lb-granz``, dengan cara memodifikasi upstream agar memiliki algoritma round robin. Berikut adalah potongan kode yang perlu ditambahkan
+
+```sh
+hash $request_uri consistent;
+upstream backend  {
+    server 10.30.3.1; # IP Lugner
+    server 10.30.3.2; # IP Linie
+    server 10.30.3.3; # IP Lawine
+}
+```
+
+2. Lalu, pada client lakukan testing dengan apache benchmark ke ``IP Load Balancer`` dengan cara berikut,
+
+```sh
+ab -n 200 -c 10 http://10.30.2.2/
+```
+
+3. Berikut adalah screenshot hasil benchmark-nya,
+
+## Soal 9
+>    Dengan menggunakan algoritma Round Robin, lakukan testing dengan menggunakan 3 worker, 2 worker, dan 1 worker sebanyak 100 request dengan 10 request/second, kemudian tambahkan grafiknya pada grimoire. 
