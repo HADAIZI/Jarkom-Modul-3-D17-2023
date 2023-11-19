@@ -75,7 +75,7 @@
   - [Result](#result-17)
 
 ## Topologi
-![Alt text](image.png)
+![Alt Text](./src/image.png)
 
 ## Config
 - **Aura (DHCP Relay)**
@@ -948,7 +948,11 @@ Pada konfigurasi di atas, rentang IP dari [prefix IP].3.16 hingga [prefix IP].3.
 
 Klien yang terhubung melalui Switch3 akan secara otomatis mendapatkan alamat IP dari rentang yang telah ditentukan pada konfigurasi di atas. Sebagai contoh, jika ada klien yang terhubung, ia akan diberikan alamat IP seperti 10.30.3.17 atau 10.30.3.65, sesuai dengan rentang yang telah ditentukan.
 
-### Result
+### Result : Screenshot IP Client Switch 3
+
+![Alt Text](./src/image-2.png)
+![Alt Text](./src/image-3.png)
+
 
 ## Soal 3
 > Client yang melalui Switch4 mendapatkan range IP dari [prefix IP].4.12 - [prefix IP].4.20 dan [prefix IP].4.160 - [prefix IP].4.168 (3)
@@ -968,6 +972,11 @@ subnet 10.30.3.0 netmask 255.255.255.0 {
 }
 ```
 Pada konfigurasi di atas, rentang IP dari [prefix IP].4.12 hingga [prefix IP].4.20 dan [prefix IP].4.160 hingga [prefix IP].4.168 telah ditentukan. Klien yang terhubung melalui Switch4 dan menggunakan layanan DHCP dari Himmel akan diberikan alamat IP dari rentang tersebut.
+
+### Result : Screenshot client switch4
+
+![Alt Text](./src/image-4.png)
+![Alt Text](./src/image-5.png)
 
 ## Soal 4
 
@@ -1055,6 +1064,10 @@ Terakhir, pastikan untuk merestart seluruh klien agar dapat melakukan leasing IP
 
 Dengan melakukan langkah-langkah tersebut, klien seharusnya dapat mendapatkan DNS dari Heiter dan terhubung dengan internet melalui DNS tersebut.
 
+### Result : Screenshot resolv.conf dari salah satu client
+
+![Alt Text](./src/image-6.png)
+
 ## Soal 5
 > Lama waktu DHCP server meminjamkan alamat IP kepada Client yang melalui Switch3 selama 3 menit sedangkan pada client yang melalui Switch4 selama 12 menit. Dengan waktu maksimal dialokasikan untuk peminjaman alamat IP selama 96 menit (5)
 ### Solution
@@ -1135,6 +1148,11 @@ service php7.3-fpm restart
 ```
 ### Result
 
+Screenshot setelah melakukan lynx ke ``granz.channel.d17.com``
+
+![Alt Text](./src/image-8.png)
+![Alt Text](./src/image-7.png)
+
 ## Soal 7
 > Kepala suku dari Bredt Region memberikan resource server sebagai berikut: Lawine, 4GB, 2vCPU, dan 80 GB SSD. Linie, 2GB, 2vCPU, dan 50 GB SSD. Lugner 1GB, 1vCPU, dan 25 GB SSD. Aturlah agar Eisen dapat bekerja dengan maksimal, lalu lakukan testing dengan 1000 request dan 100 request/second. (7)
 ### Solution
@@ -1174,6 +1192,9 @@ ab -n 1000 -c 100 http://www.granz.channel.d17.com/
 ```
 Untuk hasilnya kami masukan pada laporan ``grimoire`` nya kami membuatnya di google.docs pada [link](https://docs.google.com/document/d/1AcELjlZCdEk62BS4UysAxjA9UMvwAiZe_CxQYaNJh1M/edit) ini.
 
+![Alt Text](./src/image-9.png)
+![Alt Text](./src/image-10.png)
+
 ## Soal 8
 > Karena diminta untuk menuliskan grimoire, buatlah analisis hasil testing dengan 200 request dan 10 request/second masing-masing algoritma Load Balancer dengan ketentuan sebagai berikut: 1. Nama Algoritma Load Balancer; 2. Report hasil testing pada Apache Benchmark; 3.Grafik request per second untuk masing masing algoritma; 4. Analisis
 
@@ -1189,12 +1210,53 @@ Untuk hasilnya kami masukan pada laporan ``grimoire`` nya kami membuatnya di goo
 > Dengan menggunakan algoritma Round Robin, lakukan testing dengan menggunakan 3 worker, 2 worker, dan 1 worker sebanyak 100 request dengan 10 request/second, kemudian tambahkan grafiknya pada grimoire. (9)
 
 ### Solution 
-Jalankan pada klien
+
+1. Untuk melakukan perintah soal, kita hanya perlu melakukan ``comment`` pada beberapa server yang berada di upstream, tepatnya file ``lb-granz`` yang ada di directory ``/etc/nginx/sites-available/lb-granz``
+
+**3 Worker**
+
 ```sh
-ab -n 100 -c 10 http://www.granz.channel.a09.com/ 
+# Default menggunakan Round Robin
+upstream backend  {
+    server 10.30.3.1; # IP Lugner
+    server 10.30.3.2; # IP Linie
+    server 10.30.3.3; # IP Lawine
+}
 ```
+
+**2 Worker**
+
+```sh
+# Default menggunakan Round Robin
+upstream backend  {
+    # server 10.30.3.1; # IP Lugner
+    server 10.30.3.2; # IP Linie
+    server 10.30.3.3; # IP Lawine
+}
+```
+
+**1 Worker**
+
+```sh
+# Default menggunakan Round Robin
+upstream backend  {
+    # server 10.30.3.1; # IP Lugner
+    # server 10.30.3.2; # IP Linie
+    server 10.30.3.3; # IP Lawine
+}
+```
+
+2. Lalu, lakukan testing pada client dengan apache benchmark kepada ``IP Load Balancer`` dengan cara berikut
+
+```sh
+ab -n 100 -c 10 http://10.30.2.2/
+```
+
 ### Result
-Untuk hasilnya kami masukan pada laporan ``grimoire`` nya kami membuatnya di google.docs pada [link](https://docs.google.com/document/d/1AcELjlZCdEk62BS4UysAxjA9UMvwAiZe_CxQYaNJh1M/edit) ini.
+
+3. Berikut adalah gambar grafik yang diraih berdasarkan hasil benchmarking-nya
+
+![Alt Text](./src/image-1.png)
 
 ## Soal 10
 > Selanjutnya coba tambahkan konfigurasi autentikasi di LB dengan dengan kombinasi username: “netics” dan password: “ajkyyy”, dengan yyy merupakan kode kelompok. Terakhir simpan file “htpasswd” nya di /etc/nginx/rahasisakita/ 
@@ -1224,7 +1286,10 @@ service nginx restart
 ```
 
 Dengan tambahan konfigurasi ini, Load Balancer Nginx akan menggunakan autentikasi HTTP dengan username dan password yang telah ditentukan. 
+
 ### Result
+![Alt Text](./src/image-11.png)
+![Alt Text](./src/image-12.png)
 
 ## Soal 11
 > Lalu buat untuk setiap request yang mengandung /its akan di proxy passing menuju halaman https://www.its.ac.id. (11) hint: (proxy_pass)
@@ -1269,6 +1334,13 @@ location /its {
 
 service nginx restart
 ```
+
+### Result
+
+![Alt Text](./src/image-13.png)
+![Alt Text](./src/image-14.png)
+![Alt Text](./src/image-15.png)
+
 ## Soal 12
 > Selanjutnya LB ini hanya boleh diakses oleh client dengan IP [Prefix IP].3.69, [Prefix IP].3.70, [Prefix IP].4.167, dan [Prefix IP].4.168.
 ### Solution
@@ -1328,6 +1400,26 @@ location /its {
 service nginx restart
 
 ```
+
+### Result
+
+Untuk melakukan testing, berikan IP static pada salah satu client, sebagai contoh berikut adalah isi dari network config untuk client Richter
+
+```
+auto eth0
+iface eth0 inet static
+    address 10.30.3.70
+    netmask 255.255.255.0
+    gateway 10.30.3.0
+```
+
+lakukan testing dengan cara berikut,
+
+``lynx 10.30.2.2``
+
+![Alt Text](./src/image-16.png)
+
+Jika IP tidak sesuai dengan apa yang di allow, maka output dari lynx akan error 403 Forbidden.
 
 ## Soal 13
 > Semua data yang diperlukan, diatur pada Denken dan harus dapat diakses oleh Frieren, Flamme, dan Fern. (13)
@@ -1507,6 +1599,12 @@ Keterangan Tambahan:
 
 ### Result
 
+Jalankan kode berikut untuk mengecek apakah script mysql sudah berjalan,
+
+``mysql -u kelompokd17 -p``
+
+![Alt Text](./src/image-17.png)
+
 ## Soal 14
 > Frieren, Flamme, dan Fern memiliki Granz Channel sesuai dengan quest guide berikut. Jangan lupa melakukan instalasi PHP8.0 dan Composer 
 
@@ -1652,3 +1750,232 @@ Keterangan Tambahan:
 - Nginx telah dikonfigurasi untuk melakukan Load Balancing pada aplikasi Laravel yang dijalankan oleh Node Frieren, Flamme, dan Fern.
 
 ### Result
+
+Berikut adalah detail dari database ``kelompokd17`` setelah dilakukan migrate dan git-clone pada node Fern,
+
+![Alt Text](./src/image-18.png)
+
+## Soal 15
+
+> Riegel Channel memiliki beberapa endpoint yang harus ditesting sebanyak 100 request dengan 10 request/second. Tambahkan response dan hasil testing pada grimoire.
+
+* POST /auth/register (15)
+
+### Solution
+
+Pertama, buatlah file json terlebih dahulu yang berisi username dan password yang ingin di post, berikut adalah isi dari file ``register.json`` kami,
+
+```
+{
+    "username": "kelompokd17",
+    "password": "passwordd17"
+}
+```
+
+Lakukan command berikut pada client untuk melakukan proses registrasi (POST ke db),
+
+``ab -n 100 -c 10 -p register.json -T application/json http://10.30.4.1:8001/api/auth/register``
+
+### Result
+
+![Alt Text](./src/image-19.png)
+
+Dapat dilihat pada gambar, terdapat 100 request yang berhasil masuk, tetapi 99 diantaranya gagal. Hal ini dikarenakan database yang diatur tidak memperbolehkan username dan password yang sama, sehingga hanya terjadi 1 kali proses POST.
+
+Berikut adalah screenshot dari database setelah melakukan POST
+
+![Alt Text](./src/image-20.png)
+
+## Soal 16
+> POST /auth/login (16)
+
+### Solution
+
+Lakukan command berikut untuk melakukan benchmark ke API /auth/login,
+
+``ab -n 100 -c 10 -p register.json -T application/json http://10.30.4.1:8001/api/auth/login``
+
+### Result
+
+Berikut adalah hasil yang diraih ketika melakukan benchmark, dapat dilihat bahwa terjadi 100 request dan tidak ada yang gagal.
+
+![Alt Text](./src/image-21.png)
+
+## Soal 17
+
+> GET /me (17)
+
+Untuk melakukan testing ke API get /me, kita perlu mengatur token secara global dengan menggunakan ``curl`` dengan cara memanggil file json yang sama lalu outputkan token nya di file ``login.txt``
+
+```sh
+curl -X POST -H "Content-Type: application/json" -d @register.json http://10.30.4.1:8001/api/auth/login > login.txt
+token=$(cat login.txt | jq -r '.token')
+```
+
+Kemudian, lakukan benchmarking dengan cara berikut,
+
+``ab -n 100 -c 10 -H "Authorization: Bearer $token" http://10.30.4.1:8001/api/me``
+
+### Result
+
+![Alt Text](./src/image-22.png)
+
+## Soal 18
+
+> Untuk memastikan ketiganya bekerja sama secara adil untuk mengatur Riegel Channel maka implementasikan Proxy Bind pada Eisen untuk mengaitkan IP dari Frieren, Flamme, dan Fern
+
+### Solution
+
+Pertama, kita perlu melakukan modifikasi file load-balancer dari Riegel yang berada di directory ``/etc/nginx/sites-available/lb-riegel`` sebagaimana berikut,
+
+```sh
+# Default menggunakan Round Robin
+upstream backend-laravel  {
+    server 10.30.4.1:8001; # IP Fern
+    server 10.30.4.2:8002; # IP Flamme
+    server 10.30.4.3:8003; # IP Frieren
+}
+ 
+server {
+    listen 81;
+    server_name riegel.canyon.d17.com;
+
+    location / 
+        proxy_bind 10.30.2.2;
+
+        proxy_pass http://backend;
+        proxy_set_header    X-Real-IP $remote_addr;
+        proxy_set_header    X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header    Host $http_host;
+
+    }
+
+    error_log /var/log/nginx/lb_error.log;
+    access_log /var/log/nginx/lb_access.log;
+}
+```
+
+Dapat dilihat pada potongan kode diatas, kita hanya perlu menambahkan beberapa port khusus untuk masing-masing worker Laravel, dan menambahkan line berikut untuk mengatur proxy_bind nya.
+
+```sh
+proxy_bind 10.30.2.2;
+```
+
+### Result
+
+Berikut adalah isi dari file ``implementasi_access`` pada tiap worker laravel, terbukti bahwa mereka bekerja sama saat dipanggil benchmark ke salah satu API.
+
+![Alt Text](./src/image-23.png)
+![Alt Text](./src/image-24.png)
+![Alt Text](./src/image-25.png)
+
+## Soal 19
+
+> Untuk meningkatkan performa dari Worker, coba implementasikan PHP-FPM pada Frieren, Flamme, dan Fern. Untuk testing kinerja naikkan 
+- pm.max_children
+- pm.start_servers
+- pm.min_spare_servers
+- pm.max_spare_servers
+
+sebanyak tiga percobaan dan lakukan testing sebanyak 100 request dengan 10 request/second kemudian berikan hasil analisisnya pada Grimoire.(19)
+
+### Solution
+
+Untuk melakukan perintah soal, tambahan potongan kode berikut kedalam file ``www.conf`` yang berada pada directory ``/etc/php/8.0/fpm/pool.d/www.conf`` pada setiap worker laravel.
+
+* Fern
+
+```sh
+[www]
+user = www-data
+group = www-data
+listen = /run/php/php8.0-fpm.sock
+listen.owner = www-data
+listen.group = www-data
+php_admin_value[disable_functions] = exec,passthru,shell_exec,system
+php_admin_flag[allow_url_fopen] = off
+
+; Choose how the process manager will control the number of child processes.
+
+pm = dynamic
+pm.max_children = 10
+pm.start_servers = 3
+pm.min_spare_servers = 1
+pm.max_spare_servers = 5
+```
+
+* Flamme
+
+```sh
+[www]
+user = www-data
+group = www-data
+listen = /run/php/php8.0-fpm.sock
+listen.owner = www-data
+listen.group = www-data
+php_admin_value[disable_functions] = exec,passthru,shell_exec,system
+php_admin_flag[allow_url_fopen] = off
+
+; Choose how the process manager will control the number of child processes.
+
+pm = dynamic
+pm.max_children = 15
+pm.start_servers = 5
+pm.min_spare_servers = 4
+pm.max_spare_servers = 8
+```
+
+* Frieren
+
+```sh
+[www]
+user = www-data
+group = www-data
+listen = /run/php/php8.0-fpm.sock
+listen.owner = www-data
+listen.group = www-data
+php_admin_value[disable_functions] = exec,passthru,shell_exec,system
+php_admin_flag[allow_url_fopen] = off
+
+; Choose how the process manager will control the number of child processes.
+
+pm = dynamic
+pm.max_children = 25
+pm.start_servers = 12
+pm.min_spare_servers = 8 
+pm.max_spare_servers = 15
+```
+
+### Result
+
+Berikut adalah hasil benchmark ketika atribut pada ``pm`` dinaikkan,
+
+![Alt Text](./src/image-26.png)
+
+## Soal 20
+> Nampaknya hanya menggunakan PHP-FPM tidak cukup untuk meningkatkan performa dari worker maka implementasikan Least-Conn pada Eisen. Untuk testing kinerja dari worker tersebut dilakukan sebanyak 100 request dengan 10 request/second.
+
+### Solution
+
+Untuk melakukan perintah soal, Lakukan konfigurasi load balancer (Eisen) di directory ``/etc/nginx/sites-available/lb-granz``, dengan cara memodifikasi upstream agar memiliki algoritma least conn. Berikut adalah potongan kode yang perlu ditambahkan
+
+```sh
+least_conn;
+upstream backend  {
+    server 10.30.3.1; # IP Lugner
+    server 10.30.3.2; # IP Linie
+    server 10.30.3.3; # IP Lawine
+}
+```
+
+### Result
+
+Lakukan testing dengan cara berikut,
+
+``ab -n 100 -c 10 http://10.30.2.2/``
+
+Berikut adalah hasil benchmarknya,
+
+![Alt Text](./src/image-27.png)
+
+
