@@ -723,7 +723,7 @@ pm.max_spare_servers = 15
 service php8.0-fpm restart
 
 ```
-- **Lawine (PHP Worker)**
+- **Lawine, Lugner, Linie (PHP Worker)**
 ```sh
 apt-get update
 apt-get install nginx -y
@@ -1054,3 +1054,134 @@ Pastikan juga bahwa `net.ipv4.ip_forward` diaktifkan pada file `/etc/sysctl.conf
 Terakhir, pastikan untuk merestart seluruh klien agar dapat melakukan leasing IP dari DHCP Server.
 
 Dengan melakukan langkah-langkah tersebut, klien seharusnya dapat mendapatkan DNS dari Heiter dan terhubung dengan internet melalui DNS tersebut.
+
+## Soal 5
+> Lama waktu DHCP server meminjamkan alamat IP kepada Client yang melalui Switch3 selama 3 menit sedangkan pada client yang melalui Switch4 selama 12 menit. Dengan waktu maksimal dialokasikan untuk peminjaman alamat IP selama 96 menit (5)
+### Solution
+1. Konfigurasi DHCP Server
+Tambahkan konfigurasi waktu peminjaman alamat IP pada file /etc/dhcp/dhcpd.conf pada DHCP Server (Heiter):
+```
+echo 'subnet 10.30.1.0 netmask 255.255.255.0 {
+}
+
+subnet 10.30.2.0 netmask 255.255.255.0 {
+}
+
+subnet 10.30.3.0 netmask 255.255.255.0 {
+    range 10.30.3.16 10.30.3.32;
+    range 10.30.3.64 10.30.3.80;
+    option routers 10.30.3.0;
+    option broadcast-address 10.30.3.255;
+    option domain-name-servers 10.30.1.2;
+    default-lease-time 180; # 3 menit
+    max-lease-time 5760;   # 96 menit
+}
+
+subnet 10.30.4.0 netmask 255.255.255.0 {
+    range 10.30.4.12 10.30.4.20;
+    range 10.30.4.160 10.30.4.168;
+    option routers 10.30.4.0;
+    option broadcast-address 10.30.4.255;
+    option domain-name-servers 10.30.1.2;
+    default-lease-time 720; # 12 menit
+    max-lease-time 5760;    # 96 menit
+} ' > /etc/dhcp/dhcpd.conf
+
+service isc-dhcp-server start
+
+```
+Dengan melakukan langkah-langkah tersebut, lama waktu peminjaman alamat IP dapat diatur sesuai dengan kebutuhan, yaitu 3 menit untuk Client melalui Switch3 dan 12 menit untuk Client melalui Switch4. Waktu maksimal peminjaman alamat IP adalah 96 menit.
+
+## Soal 6
+>Pada masing-masing worker PHP, lakukan konfigurasi virtual host untuk website berikut dengan menggunakan php 7.3. 
+### Solution
+
+Konfigurasi Linie, Lugner, dan Lawine (PHP Worker):
+```sh
+echo '
+server {
+    listen 80;
+
+    root /var/www/granz.channel.d17;
+
+    index index.php index.html index.htm;
+    server_name granz.channel.d17.com;
+
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    # pass PHP scripts to FastCGI server
+    location ~ \.php$ {
+        include snippets/fastcgi-php.conf;
+        fastcgi_pass unix:/var/run/php/php7.3-fpm.sock;
+    }
+
+    location ~ /\.ht {
+        deny all;
+    }
+
+    error_log /var/log/nginx/granz_channel_d17.log;
+    access_log /var/log/nginx/granz_channel_d17.log;
+}
+' > /etc/nginx/sites-available/granz.channel.d17
+
+ln -s /etc/nginx/sites-available/granz.channel.d17 /etc/nginx/sites-enabled
+
+service nginx restart
+service php7.3-fpm start
+service php7.3-fpm restart
+
+```
+### Result
+
+## Soal 7
+>   Kepala suku dari Bredt Region memberikan resource server sebagai berikut:
+    Lawine, 4GB, 2vCPU, dan 80 GB SSD.
+    Linie, 2GB, 2vCPU, dan 50 GB SSD.
+    Lugner 1GB, 1vCPU, dan 25 GB SSD.
+    aturlah agar Eisen dapat bekerja dengan maksimal, lalu lakukan testing dengan 1000 request dan 100 request/second. (7)
+### Solution
+Pertama, kita akan melakukan konfigurasi pada Eisen, sebagai resource server dari Bredt Region. Sesuaikan sumber daya server (Lawine, Linie, dan Lugner) sesuai dengan alokasi yang diberikan.
+```sh
+echo '
+upstream backend  {
+    server 10.30.3.1 weight=4 max_fails=2 fail_timeout=30s; # IP Lugner
+    server 10.30.3.2 weight=2 max_fails=2 fail_timeout=30s; # IP Linie
+    server 10.30.3.3 weight=1 max_fails=2 fail_timeout=30s; # IP Lawine
+}
+
+server {
+    listen 80;
+
+    location / {
+        proxy_pass http://backend;
+        proxy_set_header    X-Real-IP $remote_addr;
+        proxy_set_header    X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header    Host $http_host;
+    }
+
+    error_log /var/log/nginx/eisen_error.log;
+    access_log /var/log/nginx/eisen_access.log;
+}
+' > /etc/nginx/sites-available/eisen
+
+ln -s /etc/nginx/sites-available/eisen /etc/nginx/sites-enabled/
+
+service nginx restart
+```
+
+### Result 
+Tes pada klien (Revolte) dengan 
+```sh
+ab -n 1000 -c 100 http://www.granz.channel.d17.com/ 
+```
+
+## Soal 8
+>    Karena diminta untuk menuliskan grimoire, buatlah analisis hasil testing dengan 200 request dan 10 request/second masing-masing algoritma Load Balancer dengan     ketentuan sebagai berikut:
+    Nama Algoritma Load Balancer
+    Report hasil testing pada Apache Benchmark
+    Grafik request per second untuk masing masing algoritma. 
+    Analisis (8)
+
+
